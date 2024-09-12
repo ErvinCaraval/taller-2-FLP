@@ -1,0 +1,288 @@
+ #lang eopl
+
+;; Constructores
+
+(define (make-graph vertices edges)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'vertices) vertices]
+      [(eq? signal 'edges) edges]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+(define (make-vertices node-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'nodelist) node-list]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+(define (make-edges edge-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'edgelist) edge-list]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+;; Predicados
+
+(define graph?
+  (lambda (obj)
+    (letrec ((check-vertices (lambda () (obj 'vertices)))
+             (check-edges (lambda () (obj 'edges))))
+      (and (procedure? obj)
+           (not (eq? (check-vertices) 'unknown-signal))
+           (not (eq? (check-edges) 'unknown-signal))))))    
+
+(define vertices?
+  (lambda (obj)
+    (letrec ((check-nodelist (lambda () (obj 'nodelist))))
+      (and (procedure? obj)
+           (not (eq? (check-nodelist) 'unknown-signal))))))    
+
+
+
+(define edges?
+  (lambda (obj)
+    (letrec ((check-edgelist (lambda () (obj 'edgelist))))
+      (and (procedure? obj)
+           (not (eq? (check-edgelist) 'unknown-signal))))))    
+
+
+;; Extractores
+
+
+
+(define graph->vertices
+  (lambda (graph)
+    (letrec ((extract-vertices
+              (lambda ()
+                (let ((result (graph 'vertices)))
+                  (if (eq? result 'unknown-signal)
+                      '("Unknown signal in graph->vertices")
+                      result)))))
+      (extract-vertices))))
+
+(define graph->edges
+  (lambda (graph)
+    (letrec ((extract-edges
+              (lambda ()
+                (let ((result (graph 'edges)))
+                  (if (eq? result 'unknown-signal)
+                      '("Unknown signal in graph->edges")
+                      result)))))
+      (extract-edges))))
+
+(define vertices->nodelist
+  (lambda (vertices)
+    (letrec ((extract-nodelist
+              (lambda ()
+                (let ((result (vertices 'nodelist)))
+                  (if (eq? result 'unknown-signal)
+                      '("Unknown signal in vertices->nodelist")
+                      result)))))
+      (extract-nodelist))))
+
+(define edges->edgelist
+  (lambda (edges)
+    (letrec ((extract-edgelist
+              (lambda ()
+                (let ((result (edges 'edgelist)))
+                  (if (eq? result 'unknown-signal)
+                      '("Unknown signal in edges->edgelist")
+                      result)))))
+      (extract-edgelist))))
+
+
+;; Definición de reverse usando letrec
+(define reverse
+  (lambda (lst)
+    (letrec ((loop
+              (lambda (lst acc)
+                (if (null? lst)
+                    acc
+                    (loop (cdr lst) (cons (car lst) acc))))))
+      (loop lst '()))))
+
+;; Definición de filter usando letrec
+(define filter
+  (lambda (pred lst)
+    (letrec ((loop
+              (lambda (lst acc)
+                (if (null? lst)
+                    (reverse acc)
+                    (loop (cdr lst)
+                          (if (pred (car lst))
+                              (cons (car lst) acc)
+                              acc))))))
+      (loop lst '()))))
+
+
+
+
+;; Función para determinar si un grafo es dirigido
+(define directed?
+ ( lambda(graph)
+  (letrec ((edges (graph->edges graph))
+         (edge-list (edges->edgelist edges)))
+    (letrec ((reverse (lambda (lst)
+                        (let loop ((lst lst) (acc '()))
+                          (if (null? lst)
+                              acc
+                              (loop (cdr lst) (cons (car lst) acc)))))))
+      (not (null? (filter (lambda (edge)
+                            (not (member (reverse edge) edge-list)))
+                          edge-list))))))  )
+
+;; Funciones de Unparse
+;; Función principal para convertir un grafo en una representación en lista
+(define unparse-exp 
+ (lambda(graph)
+   (letrec ((vertices
+            (lambda (graph)
+              (graph->vertices graph)))
+           (edges
+            (lambda (graph)
+              (graph->edges graph))))
+    (let ((vertex-list (vertices graph))
+          (edge-list (edges graph)))
+      (list 'graph
+            (unparse-vertices vertex-list)
+            (unparse-edges edge-list))))))
+
+;; Función para convertir los vértices en una representación en lista
+(define unparse-vertices 
+  (lambda (vertices)
+  (letrec ((nodelist
+            (lambda (vertices)
+              (vertices->nodelist vertices))))
+    (let ((node-list (nodelist vertices)))
+      (list 'vertices node-list)))))
+
+;; Función para convertir las aristas en una representación en lista
+(define unparse-edges 
+  (lambda (edges)
+  (letrec ((edgelist
+            (lambda (edges)
+              (edges->edgelist edges)))
+           (unparse-edgelist
+            (lambda (edgelist)
+              (letrec ((loop
+                        (lambda (lst acc)
+                          (if (null? lst)
+                              (reverse acc)
+                              (loop (cdr lst) (cons (unparse-edge (car lst)) acc))))))
+                (loop edgelist '())))))
+    (let ((edge-list (edgelist edges)))
+      (list 'edges (unparse-edgelist edge-list))))))
+
+;; Función para convertir una arista en una representación en lista
+(define unparse-edge 
+  (lambda(edge)
+  (letrec ((from
+            (lambda (edge)
+              (car edge)))
+           (to
+            (lambda (edge)
+              (cadr edge))))
+    (let ((from-node (from edge))
+          (to-node (to edge)))
+      (list from-node to-node)))))
+
+
+
+
+
+;;Codigo Cliente
+;; Crear un grafo con vértices y aristas
+(define g1
+  (make-graph
+   (make-vertices '(a b c d))
+   (make-edges '((a b) (c d) (c b) (a c)))))
+
+;; Crear otro grafo
+(define g2
+  (make-graph
+   (make-vertices '(x y z))
+   (make-edges '((x y) (y z) (z x)))))
+
+;; Crear un tercer grafo
+(define g3
+  (make-graph
+   (make-vertices '(p q r s))
+   (make-edges '((p q) (q r) (r s) (s p)))))
+
+(define g5
+  (make-graph
+   (make-vertices '(m n o p))
+   (make-edges '((m n) (n m)
+                 (n o) (o n)
+                 (o p) (p o)
+                 (p m) (m p)
+                 (m o) (o m)
+                 (n p) (p n)))))
+
+
+;; Función para manejar grafos
+(define (handle-graph graph)
+  (cond
+    ;; Verificamos si el objeto es un grafo usando el predicado graph?
+    ((graph? graph)
+     ;; Obtenemos los vértices y aristas del grafo
+     (letrec ((vertices (graph->vertices graph))
+            (edges (graph->edges graph))
+            (is-directed (directed? graph))) ;; Verificamos si el grafo es dirigido
+       
+       ;; Verificamos si los vértices son válidos
+       (cond
+         ((vertices? vertices)
+          ;; Verificamos si las aristas son válidas
+          (cond
+            ((edges? edges)
+             ;; Mostrar si el grafo es dirigido o no
+             (if is-directed
+                 (display "Graph is directed.")
+                 (display "Graph is not directed."))
+             (newline)
+             
+             ;; Obtenemos y mostramos la lista de nodos
+             (display "Vertices: ")
+             (display (vertices->nodelist vertices))
+             (newline)
+             
+             ;; Obtenemos y mostramos la lista de aristas
+             (display "Edges: ")
+             (display (edges->edgelist edges))
+             (newline))
+            
+            ;; Si las aristas no son válidas
+            (else (display "Invalid edges structure.")
+                  (newline))))
+         
+         ;; Si los vértices no son válidos
+         (else (display "Invalid vertices structure.")
+               (newline)))))
+
+    ;; Si no es un grafo válido
+    (else (display "Not a valid graph.")
+          (newline))))
+
+
+
+
+;; Usar la función para manejar los grafos
+(handle-graph g1)
+(newline)
+(handle-graph g2)
+(newline)
+(handle-graph g3)
+(newline)
+(handle-graph g5)
+(newline)
+(display (unparse-exp g1))
+(newline)
+(display (unparse-exp g2))
+(newline)
+(display (unparse-exp g5))
+(newline)
+(display (unparse-exp g3))
+(newline)
+(display (unparse-exp g5))
+(newline)

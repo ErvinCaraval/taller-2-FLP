@@ -1,0 +1,112 @@
+#lang eopl
+
+;; Constructores
+(define (make-graph vertices edges)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'vertices) vertices]
+      [(eq? signal 'edges) edges]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+(define (make-vertices node-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'nodelist) node-list]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+(define (make-edges edge-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'edgelist) edge-list]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+;; Predicados
+(define graph?
+  (lambda (obj)
+    (letrec ((check-vertices (lambda () (obj 'vertices)))
+             (check-edges (lambda () (obj 'edges))))
+      (and (procedure? obj)
+           (not (eq? (check-vertices) 'unknown-signal))
+           (not (eq? (check-edges) 'unknown-signal))))))    
+
+(define vertices?
+  (lambda (obj)
+    (letrec ((check-nodelist (lambda () (obj 'nodelist))))
+      (and (procedure? obj)
+           (not (eq? (check-nodelist) 'unknown-signal))))))    
+
+(define edges?
+  (lambda (obj)
+    (letrec ((check-edgelist (lambda () (obj 'edgelist))))
+      (and (procedure? obj)
+           (not (eq? (check-edgelist) 'unknown-signal))))))    
+
+;; Extractores
+(define graph->vertices
+  (lambda (graph)
+    (letrec ((extract-vertices
+              (lambda ()
+                (let ((result (graph 'vertices)))
+                  (if (eq? result 'unknown-signal)
+                      ("Unknown signal in graph->vertices")
+                      result)))))
+      (extract-vertices))))
+
+(define graph->edges
+  (lambda (graph)
+    (letrec ((extract-edges
+              (lambda ()
+                (let ((result (graph 'edges)))
+                  (if (eq? result 'unknown-signal)
+                      ( "Unknown signal in graph->edges")
+                      result)))))
+      (extract-edges))))
+
+(define vertices->nodelist
+  (lambda (vertices)
+    (letrec ((extract-nodelist
+              (lambda ()
+                (let ((result (vertices 'nodelist)))
+                  (if (eq? result 'unknown-signal)
+                      ("Unknown signal in vertices->nodelist")
+                      result)))))
+      (extract-nodelist))))
+
+(define edges->edgelist
+  (lambda (edges)
+    (letrec ((extract-edgelist
+              (lambda ()
+                (let ((result (edges 'edgelist)))
+                  (if (eq? result 'unknown-signal)
+                      ("Unknown signal in edges->edgelist")
+                      result)))))
+      (extract-edgelist))))
+
+;; Función para construir la representación abstracta usando listas
+(define (representacion-abstrata graph)
+  (let* ((vertices (graph->vertices graph))
+         (edges (graph->edges graph))
+         (nodelist (vertices->nodelist vertices))
+         (edgelist (edges->edgelist edges)))
+    (define (representar-aristas edges-list)
+      (if (null? edges-list)
+          '()
+          (let ((edge (car edges-list))
+                (rest (cdr edges-list)))
+            (cons (list 'edge-exp (car edge) (cadr edge))
+                  (representar-aristas rest)))))
+    (list 'graph-exp
+          (list 'vertices-exp nodelist)
+          (list 'edges-exp (representar-aristas edgelist)))))
+
+;; Crear el grafo g1
+(define g1
+  (make-graph
+   (make-vertices '(a b c d))
+   (make-edges '((a b) (c d) (c b) (a c)))))
+
+;; Mostrar la representación abstracta del grafo g1
+(display (representacion-abstrata g1))
+(newline)
+
+

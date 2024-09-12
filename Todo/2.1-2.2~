@@ -1,0 +1,403 @@
+#lang eopl
+;;;;;;;;;;;;;;;;;2.1-A
+;; Constructores
+
+(define (make-graph vertices edges)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'vertices) vertices]
+      [(eq? signal 'edges) edges]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+(define (make-vertices node-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'nodelist) node-list]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+(define (make-edges edge-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'edgelist) edge-list]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+;; Predicados
+
+(define graph?
+  (lambda (obj)
+    (letrec ((check-vertices (lambda () (obj 'vertices)))
+             (check-edges (lambda () (obj 'edges))))
+      (and (procedure? obj)
+           (not (eq? (check-vertices) 'unknown-signal))
+           (not (eq? (check-edges) 'unknown-signal))))))    
+
+(define vertices?
+  (lambda (obj)
+    (letrec ((check-nodelist (lambda () (obj 'nodelist))))
+      (and (procedure? obj)
+           (not (eq? (check-nodelist) 'unknown-signal))))))    
+
+
+
+(define edges?
+  (lambda (obj)
+    (letrec ((check-edgelist (lambda () (obj 'edgelist))))
+      (and (procedure? obj)
+           (not (eq? (check-edgelist) 'unknown-signal))))))    
+
+
+;; Extractores
+
+
+
+(define graph->vertices
+  (lambda (graph)
+    (letrec ((extract-vertices
+              (lambda ()
+                (let ((result (graph 'vertices)))
+                  (if (eq? result 'unknown-signal)
+                      '("Unknown signal in graph->vertices")
+                      result)))))
+      (extract-vertices))))
+
+(define graph->edges
+  (lambda (graph)
+    (letrec ((extract-edges
+              (lambda ()
+                (let ((result (graph 'edges)))
+                  (if (eq? result 'unknown-signal)
+                      '("Unknown signal in graph->edges")
+                      result)))))
+      (extract-edges))))
+
+(define vertices->nodelist
+  (lambda (vertices)
+    (letrec ((extract-nodelist
+              (lambda ()
+                (let ((result (vertices 'nodelist)))
+                  (if (eq? result 'unknown-signal)
+                      '("Unknown signal in vertices->nodelist")
+                      result)))))
+      (extract-nodelist))))
+
+(define edges->edgelist
+  (lambda (edges)
+    (letrec ((extract-edgelist
+              (lambda ()
+                (let ((result (edges 'edgelist)))
+                  (if (eq? result 'unknown-signal)
+                      '("Unknown signal in edges->edgelist")
+                      result)))))
+      (extract-edgelist))))
+
+;; Funciones de Unparse
+;; Función principal para convertir un grafo en una representación en lista
+(define unparses-exp 
+ (lambda(graph)
+   (letrec ((vertices
+            (lambda (graph)
+              (graph->vertices graph)))
+           (edges
+            (lambda (graph)
+              (graph->edges graph))))
+    (let ((vertex-list (vertices graph))
+          (edge-list (edges graph)))
+      (list 'graph
+            (unparses-vertices vertex-list)
+            (unparses-edges edge-list))))))
+
+;; Función para convertir los vértices en una representación en lista
+(define unparses-vertices 
+  (lambda (vertices)
+  (letrec ((nodelist
+            (lambda (vertices)
+              (vertices->nodelist vertices))))
+    (let ((node-list (nodelist vertices)))
+      (list 'vertices node-list)))))
+
+;; Función para convertir las aristas en una representación en lista
+(define unparses-edges 
+  (lambda (edges)
+  (letrec ((edgelist
+            (lambda (edges)
+              (edges->edgelist edges)))
+           (unparses-edgelist
+            (lambda (edgelist)
+              (letrec ((loop
+                        (lambda (lst acc)
+                          (if (null? lst)
+                              (reverse acc)
+                              (loop (cdr lst) (cons (unparses-edge (car lst)) acc))))))
+                (loop edgelist '())))))
+    (let ((edge-list (edgelist edges)))
+      (list 'edges (unparses-edgelist edge-list))))))
+
+;; Función para convertir una arista en una representación en lista
+(define unparses-edge 
+  (lambda(edge)
+  (letrec ((from
+            (lambda (edge)
+              (car edge)))
+           (to
+            (lambda (edge)
+              (cadr edge))))
+    (let ((from-node (from edge))
+          (to-node (to edge)))
+      (list from-node to-node)))))
+
+
+
+
+
+
+;;Codigo Cliente 2.1-A
+(define g1
+  (make-graph
+   (make-vertices '(a b c d))
+   (make-edges '((a b) (c d) (c b) (a c)))))
+
+(define g2
+  (make-graph
+   (make-vertices '(x y z))
+   (make-edges '((x y) (y z) (z x)))))
+
+
+(define g3
+  (make-graph
+   (make-vertices '(p q r s))
+   (make-edges '((p q) (q r) (r s) (s p)))))
+
+(define g5
+  (make-graph
+   (make-vertices '(m n o p))
+   (make-edges '((m n) (n m)
+                 (n o) (o n)
+                 (o p) (p o)
+                 (p m) (m p)
+                 (m o) (o m)
+                 (n p) (p n)))))
+
+(newline)
+(display "Salidas 2.1-A  listas")
+(newline)
+
+(newline)
+(display (unparses-exp g1))
+(newline)
+(newline)
+(display  (unparses-exp g3))
+(newline)
+(newline)
+(display (unparses-exp g5))
+(newline)
+;;;;;;;;;;;;;;;;;2.1-B
+(define-datatype graphs-exp graphs?
+  (a-graph
+   (vertices vertices-exp?)  ; lista de vértices
+   (edges edges-exp?)))      ; lista de aristas
+
+(define-datatype vertices-exp vertices-exp?
+  (a-vertices
+   (nodelist (list-of symbol?))))  ; lista de símbolos (vértices)
+
+(define-datatype edges-exp edges-exp?
+  (a-edges
+   (edgelist (list-of edge-exp?))))  ; lista de aristas
+
+(define-datatype edge-exp edge-exp?
+  (an-edge
+   (from symbol?)          ; vértice origen
+   (to symbol?)))          ; vértice destino
+
+;; Selectores para vertices-exp utilizando lambda
+(define vertices-exp-nodelist
+  (lambda (v-exp)
+    (cases vertices-exp v-exp
+      (a-vertices (nodelist) nodelist))))
+
+;; Selectores para edges-exp utilizando lambda
+(define edges-exp-edgelist
+  (lambda (e-exp)
+    (cases edges-exp e-exp
+      (a-edges (edgelist) edgelist))))
+
+
+;; Selectores para edge-exp utilizando lambda
+(define edge-exp-from
+  (lambda (edge)
+    (cases edge-exp edge
+      (an-edge (from to) from))))
+
+(define edge-exp-to
+  (lambda (edge)
+    (cases edge-exp edge
+      (an-edge (from to) to))))
+;; Selectores para graph-exp utilizando lambda
+(define graphs-exp-vertices
+  (lambda (g-exp)
+    (cases graphs-exp g-exp
+      (a-graph (vertices edges) vertices))))
+
+(define graphs-exp-edges
+  (lambda (g-exp)
+    (cases graphs-exp g-exp
+      (a-graph (vertices edges) edges))))
+
+;;Codigo Cliente 2.1-B
+
+(define g1a
+  (a-graph
+   (a-vertices '(a b c d))
+   (a-edges
+    (list (an-edge 'a 'b)
+          (an-edge 'c 'd)
+          (an-edge 'c 'b)
+          (an-edge 'a 'c))))) 
+
+(define g2a
+  (a-graph
+   (a-vertices '(x y z))
+   (a-edges (list (an-edge 'x 'y)
+                  (an-edge 'y 'z)
+                  (an-edge 'z 'x)))))
+
+(define g5a
+  (a-graph
+   (a-vertices '(m n o p))
+   (a-edges (list (an-edge 'm 'n)
+                  (an-edge 'n 'm)
+                  (an-edge 'n 'o)
+                  (an-edge 'o 'n)
+                  (an-edge 'o 'p)
+                  (an-edge 'p 'o)
+                  (an-edge 'p 'm)
+                  (an-edge 'm 'p)
+                  (an-edge 'm 'o)
+                  (an-edge 'o 'm)
+                  (an-edge 'n 'p)
+                  (an-edge 'p 'n)))))
+
+
+
+(newline)
+(display "Salidas 2.1-B define-datatype")
+(newline)
+
+(newline)
+(display g1a)
+(newline)
+
+(newline)
+(display g2a)
+(newline)
+
+(newline)
+(display g5a)
+(newline)
+
+;;;;;;;;;;;;;;;;;2.2-A
+
+;; Función para representar la sintaxis abstracta del grafo en el formato deseado
+
+(define (my-map proc lst)
+  (if (null? lst)
+      '()  ; Caso base: lista vacía
+      (cons (proc (car lst)) (my-map proc (cdr lst)))))  ; Aplicar `proc` al primer elemento y recursivamente al resto
+
+(define PARCEDNF
+    (lambda(graph)
+  (letrec ((vertices (graph->vertices graph))
+         (edges (graph->edges graph))
+         (nodelist (vertices->nodelist vertices))
+         (edgelist (edges->edgelist edges)))
+    (define (representar-aristas edges-list)
+      (if (null? edges-list)
+          '()
+          (let ((edge (car edges-list))
+                (rest (cdr edges-list)))
+            (cons `(struct : edge-exp ,(car edge) ,(cadr edge))
+                  (representar-aristas rest)))))
+    `(#(struct : graph-exp
+       #(struct : vertices-exp ,nodelist)
+       #(struct : edges-exp
+         ,(my-map (lambda (edge)
+                  `(struct : edge-exp ,(car edge) ,(cadr edge)))
+                edgelist)))))))
+
+(newline)
+(display "Salidas 2.2-A  listas")
+(newline)
+
+(newline)
+(display (PARCEDNF g1))
+(newline)
+
+(newline)
+(display (PARCEDNF g2))
+(newline)
+
+(newline)
+(display (PARCEDNF g5))
+(newline)
+
+;;;;;;;;;;;;;;;;;2.2-B
+;; Función para desanalizar (unparse) una estructura graph-exp a su representación textual
+
+;; Función para desanalizar vertices-exp
+(define unparse-vertices
+  (lambda (v-exp)
+    (cases vertices-exp v-exp
+      (a-vertices (nodelist)
+                  (list 'vertices (unparse-nodelist nodelist))))))
+
+;; Función auxiliar para desanalizar la lista de nodos
+(define unparse-nodelist
+  (lambda (lst)
+    (cond
+      [(null? lst) '()]
+      [else (cons (car lst) (unparse-nodelist (cdr lst)))])))
+
+;; Función para desanalizar edges-exp
+(define unparse-edges
+  (lambda (e-exp)
+    (cases edges-exp e-exp
+      (a-edges (edgelist)
+               (list 'edges (unparse-edgelist edgelist))))))
+
+;; Función auxiliar para desanalizar la lista de aristas
+(define unparse-edgelist
+  (lambda (lst)
+    (cond
+      [(null? lst) '()]
+      [else (cons (unparse-edge (car lst)) (unparse-edgelist (cdr lst)))])))
+
+;; Función para desanalizar edge-exp
+(define unparse-edge
+  (lambda (edge)
+    (cases edge-exp edge
+      (an-edge (from to)
+               (list from to)))))
+
+(define UNPARCEDNF
+  (lambda (exp)
+    (cases graphs-exp exp
+      (a-graph (vertices edges)
+               (list 'graph
+                     (unparse-vertices vertices)
+                     (unparse-edges edges))))))
+
+(newline)
+(display "Salidas 2.2-B   define-datatype")
+(newline)
+
+(newline)
+(display (UNPARCEDNF g1a))
+(newline)
+
+(newline)
+(display (UNPARCEDNF g2a))
+(newline)
+
+(newline)
+(display (UNPARCEDNF g5a))
+(newline)

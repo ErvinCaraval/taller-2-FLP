@@ -1,0 +1,253 @@
+#lang eopl
+
+;; Definición de tipos de datos (datatypes)
+(define-datatype graph-exp graph?
+  (a-graph
+   (vertices vertices-exp?)  ; lista de vértices
+   (edges edges-exp?)))      ; lista de aristas
+
+(define-datatype vertices-exp vertices-exp?
+  (a-vertices
+   (nodelist (list-of symbol?))))  ; lista de símbolos (vértices)
+
+(define-datatype edges-exp edges-exp?
+  (a-edges
+   (edgelist (list-of edge-exp?))))  ; lista de aristas
+
+(define-datatype edge-exp edge-exp?
+  (an-edge
+   (from symbol?)          ; vértice origen
+   (to symbol?)))          ; vértice destino
+
+;; Selectores para vertices-exp utilizando lambda
+(define vertices-exp-nodelist
+  (lambda (v-exp)
+    (cases vertices-exp v-exp
+      (a-vertices (nodelist) nodelist))))
+
+;; Selectores para edges-exp utilizando lambda
+(define edges-exp-edgelist
+  (lambda (e-exp)
+    (cases edges-exp e-exp
+      (a-edges (edgelist) edgelist))))
+
+;; Selectores para edge-exp utilizando lambda
+(define edge-exp-from
+  (lambda (edge)
+    (cases edge-exp edge
+      (an-edge (from to) from))))
+
+(define edge-exp-to
+  (lambda (edge)
+    (cases edge-exp edge
+      (an-edge (from to) to))))
+
+;; Selectores para graph-exp utilizando lambda
+(define graph-exp-vertices
+  (lambda (g-exp)
+    (cases graph-exp g-exp
+      (a-graph (vertices edges) vertices))))
+
+(define graph-exp-edges
+  (lambda (g-exp)
+    (cases graph-exp g-exp
+      (a-graph (vertices edges) edges))))
+
+;; Función para desanalizar (unparse) una estructura graph-exp a su representación textual
+(define unparse-exp
+  (lambda (exp)
+    (cases graph-exp exp
+      (a-graph (vertices edges)
+               (list 'graph
+                     (unparse-vertices vertices)
+                     (unparse-edges edges))))))
+
+;; Función para desanalizar vertices-exp
+(define unparse-vertices
+  (lambda (v-exp)
+    (cases vertices-exp v-exp
+      (a-vertices (nodelist)
+                  (list 'vertices (unparse-nodelist nodelist))))))
+
+;; Función auxiliar para desanalizar la lista de nodos
+(define unparse-nodelist
+  (lambda (lst)
+    (cond
+      [(null? lst) '()]
+      [else (cons (car lst) (unparse-nodelist (cdr lst)))])))
+
+;; Función para desanalizar edges-exp
+(define unparse-edges
+  (lambda (e-exp)
+    (cases edges-exp e-exp
+      (a-edges (edgelist)
+               (list 'edges (unparse-edgelist edgelist))))))
+
+;; Función auxiliar para desanalizar la lista de aristas
+(define unparse-edgelist
+  (lambda (lst)
+    (cond
+      [(null? lst) '()]
+      [else (cons (unparse-edge (car lst)) (unparse-edgelist (cdr lst)))])))
+
+;; Función para desanalizar edge-exp
+(define unparse-edge
+  (lambda (edge)
+    (cases edge-exp edge
+      (an-edge (from to)
+               (list from to)))))
+
+
+
+;; Definición de `reverse` usando `letrec`
+(define reverse
+  (lambda (lst)
+    (letrec ((loop
+              (lambda (lst acc)
+                (if (null? lst)
+                    acc
+                    (loop (cdr lst) (cons (car lst) acc))))))
+      (loop lst '()))))
+
+;; Definición de `filter` usando `letrec`
+(define filter
+  (lambda (pred lst)
+    (letrec ((loop
+              (lambda (lst acc)
+                (if (null? lst)
+                    (reverse acc)
+                    (loop (cdr lst)
+                          (if (pred (car lst))
+                              (cons (car lst) acc)
+                              acc))))))
+      (loop lst '()))))
+
+;; Función para determinar si un grafo es dirigido
+(define directed?
+  (lambda (graph)
+    (letrec ((edges (graph-exp-edges graph))
+             (edge-list (edges-exp-edgelist edges))
+             (reverse-edge
+              (lambda (edge)
+                (let ((from (edge-exp-from edge))
+                      (to (edge-exp-to edge)))
+                  (an-edge to from))))
+             (reverse-edges
+              (lambda (edges)
+                (map reverse-edge (edges-exp-edgelist edges)))))
+      (not (null? (filter (lambda (edge)
+                            (not (member (reverse-edge edge) edge-list)))
+                          edge-list))))))
+
+
+
+;; Definición de la función handle-graph para procesar y mostrar la información de un grafo
+(define (handle-graph graph)
+  (cond
+    ;; Verificamos si el objeto es un grafo usando el predicado `graph?`
+    ((graph? graph)
+     ;; Obtenemos los vértices y aristas del grafo
+     (let* ((vertices (graph-exp-vertices graph))
+            (edges (graph-exp-edges graph))
+            (is-directed (directed? graph))) ;; Determinamos si el grafo es dirigido
+       
+       ;; Verificamos si los vértices son válidos
+       (cond
+         ((vertices-exp? vertices)
+          ;; Verificamos si las aristas son válidas
+          (cond
+            ((edges-exp? edges)
+             ;; Mostrar si el grafo es dirigido o no
+             (display (if is-directed "The graph is directed." "The graph is not directed."))
+             (newline)
+             
+             ;; Mostrar la lista de nodos
+             (display "Vertices: ")
+             (display (vertices-exp-nodelist vertices))
+             (newline)
+             
+             ;; Mostrar la lista de aristas
+             (display "Edges: ")
+             (display (map (lambda (edge)
+                             (list (edge-exp-from edge) (edge-exp-to edge)))
+                           (edges-exp-edgelist edges)))
+             (newline))
+            
+            ;; Si las aristas no son válidas
+            (else (display "Invalid edges structure.")
+                  (newline))))
+         
+         ;; Si los vértices no son válidos
+         (else (display "Invalid vertices structure.")
+               (newline)))))
+
+    ;; Si no es un grafo válido
+    (else (display "Not a valid graph.")
+          (newline))))
+
+
+
+
+
+
+
+;; Ejemplos
+
+(define g1
+  (a-graph
+   (a-vertices '(a b c d))
+   (a-edges
+    (list (an-edge 'a 'b)
+          (an-edge 'c 'd)
+          (an-edge 'c 'b)
+          (an-edge 'a 'c))))) 
+
+(define g2
+  (a-graph
+   (a-vertices '(x y z))
+   (a-edges (list (an-edge 'x 'y)
+                  (an-edge 'y 'z)
+                  (an-edge 'z 'x)))))
+
+(define g5
+  (a-graph
+   (a-vertices '(m n o p))
+   (a-edges (list (an-edge 'm 'n)
+                  (an-edge 'n 'm)
+                  (an-edge 'n 'o)
+                  (an-edge 'o 'n)
+                  (an-edge 'o 'p)
+                  (an-edge 'p 'o)
+                  (an-edge 'p 'm)
+                  (an-edge 'm 'p)
+                  (an-edge 'm 'o)
+                  (an-edge 'o 'm)
+                  (an-edge 'n 'p)
+                  (an-edge 'p 'n)))))
+
+
+
+
+
+;; Mostrar el grafo
+;; Ejemplos para probar la función handle-graph
+(display "Handling graph g1:")
+(newline)
+(handle-graph g1)
+(newline)
+
+(display "Handling graph g2:")
+(newline)
+(handle-graph g2)
+(newline)
+
+(display "Handling graph g5:")
+(newline)
+(handle-graph g5)
+(newline)
+(display (unparse-exp g1))
+(newline)
+(display (unparse-exp g2))
+(newline)
+(display (unparse-exp g5))
+(newline)

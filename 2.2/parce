@@ -1,0 +1,108 @@
+#lang eopl
+
+;; Constructores para representar grafos, vértices y aristas usando listas
+(define (make-graph vertices edges)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'vertices) vertices]
+      [(eq? signal 'edges) edges]
+      [else 'unknown-signal])))
+
+(define (make-vertices node-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'nodelist) node-list]
+      [else 'unknown-signal])))
+
+(define (make-edges edge-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'edgelist) edge-list]
+      [else 'unknown-signal])))
+
+;; Extractores para obtener vértices y aristas
+(define (graph->vertices graph)
+  (let ((result (graph 'vertices)))
+    (if (eq? result 'unknown-signal)
+        ("Unknown signal in graph->vertices")
+        result)))
+
+(define (graph->edges graph)
+  (let ((result (graph 'edges)))
+    (if (eq? result 'unknown-signal)
+        ("Unknown signal in graph->edges")
+        result)))
+
+(define (vertices->nodelist vertices)
+  (let ((result (vertices 'nodelist)))
+    (if (eq? result 'unknown-signal)
+        ("Unknown signal in vertices->nodelist")
+        result)))
+
+(define (edges->edgelist edges)
+  (let ((result (edges 'edgelist)))
+    (if (eq? result 'unknown-signal)
+        ( "Unknown signal in edges->edgelist")
+        result)))
+
+;; Función para representar la sintaxis abstracta del grafo en el formato deseado
+(define PARCEDNF
+    (lambda(graph)
+  (letrec ((vertices (graph->vertices graph))
+         (edges (graph->edges graph))
+         (nodelist (vertices->nodelist vertices))
+         (edgelist (edges->edgelist edges)))
+    (define (representar-aristas edges-list)
+      (if (null? edges-list)
+          '()
+          (let ((edge (car edges-list))
+                (rest (cdr edges-list)))
+            (cons `(struct : edge-exp ,(car edge) ,(cadr edge))
+                  (representar-aristas rest)))))
+    `(#(struct : graph-exp
+       #(struct : vertices-exp ,nodelist)
+       #(struct : edges-exp
+         ,(my-map (lambda (edge)
+                  `(struct : edge-exp ,(car edge) ,(cadr edge)))
+                edgelist)))))))
+
+(define (my-map proc lst)
+  (if (null? lst)
+      '()  ; Caso base: lista vacía
+      (cons (proc (car lst)) (my-map proc (cdr lst)))))  ; Aplicar `proc` al primer elemento y recursivamente al resto
+
+
+
+;; Crear el grafo g1
+(define g1
+  (make-graph
+   (make-vertices '(a b c d))
+   (make-edges '((a b) (c d) (c b) (a c)))))
+
+;; Crear otro grafo
+(define g2
+  (make-graph
+   (make-vertices '(x y z))
+   (make-edges '((x y) (y z) (z x)))))
+
+
+(define g5
+  (make-graph
+   (make-vertices '(m n o p))
+   (make-edges '((m n) (n m)
+                 (n o) (o n)
+                 (o p) (p o)
+                 (p m) (m p)
+                 (m o) (o m)
+                 (n p) (p n)))))
+
+
+;; Mostrar la representación abstracta del grafo g1
+(display (PARCEDNF g1))
+(newline)
+
+(display (PARCEDNF g2))
+(newline)
+
+(display (PARCEDNF g5))
+(newline)
