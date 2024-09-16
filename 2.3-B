@@ -54,7 +54,7 @@
       (a-graph (vertices edges) edges))))
 
 ;; Función para desanalizar (unparse) una estructura graph-exp a su representación textual
-(define unparse-exp
+(define UNPARSEBNF
   (lambda (exp)
     (cases graph-exp exp
       (a-graph (vertices edges)
@@ -97,6 +97,17 @@
       (an-edge (from to)
                (list from to)))))
 
+(define filter
+  (lambda (pred lst)
+    (letrec ((loop
+              (lambda (lst acc)
+                (if (null? lst)
+                    (reverse acc) ;; Revertir el acumulador para mantener el orden original
+                    (loop (cdr lst)
+                          (if (pred (car lst))
+                              (cons (car lst) acc)
+                              acc))))))
+      (loop lst '()))))
 
 
 ;; Definición de `reverse` usando `letrec`
@@ -109,98 +120,15 @@
                     (loop (cdr lst) (cons (car lst) acc))))))
       (loop lst '()))))
 
-;; Definición de `filter` usando `letrec`
-(define filter
-  (lambda (pred lst)
-    (letrec ((loop
-              (lambda (lst acc)
-                (if (null? lst)
-                    (reverse acc)
-                    (loop (cdr lst)
-                          (if (pred (car lst))
-                              (cons (car lst) acc)
-                              acc))))))
-      (loop lst '()))))
-
-;; Función para determinar si un grafo es dirigido
-(define directed?
-  (lambda (graph)
-    (letrec ((edges (graph-exp-edges graph))
-             (edge-list (edges-exp-edgelist edges))
-             (reverse-edge
-              (lambda (edge)
-                (let ((from (edge-exp-from edge))
-                      (to (edge-exp-to edge)))
-                  (an-edge to from))))
-             (reverse-edges
-              (lambda (edges)
-                (map reverse-edge (edges-exp-edgelist edges)))))
-      (not (null? (filter (lambda (edge)
-                            (not (member (reverse-edge edge) edge-list)))
-                          edge-list))))))
-
-
-
-;; Definición de la función handle-graph para procesar y mostrar la información de un grafo
-(define (handle-graph graph)
-  (cond
-    ;; Verificamos si el objeto es un grafo usando el predicado `graph?`
-    ((graph? graph)
-     ;; Obtenemos los vértices y aristas del grafo
-     (let* ((vertices (graph-exp-vertices graph))
-            (edges (graph-exp-edges graph))
-            (is-directed (directed? graph))) ;; Determinamos si el grafo es dirigido
-       
-       ;; Verificamos si los vértices son válidos
-       (cond
-         ((vertices-exp? vertices)
-          ;; Verificamos si las aristas son válidas
-          (cond
-            ((edges-exp? edges)
-             ;; Mostrar si el grafo es dirigido o no
-             (display (if is-directed "The graph is directed." "The graph is not directed."))
-             (newline)
-             
-             ;; Mostrar la lista de nodos
-             (display "Vertices: ")
-             (display (vertices-exp-nodelist vertices))
-             (newline)
-             
-             ;; Mostrar la lista de aristas
-             (display "Edges: ")
-             (display (map (lambda (edge)
-                             (list (edge-exp-from edge) (edge-exp-to edge)))
-                           (edges-exp-edgelist edges)))
-             (newline))
-            
-            ;; Si las aristas no son válidas
-            (else (display "Invalid edges structure.")
-                  (newline))))
-         
-         ;; Si los vértices no son válidos
-         (else (display "Invalid vertices structure.")
-               (newline)))))
-
-    ;; Si no es un grafo válido
-    (else (display "Not a valid graph.")
-          (newline))))
-
-
-
-
-
-
-
-;; Ejemplos
-
 (define g1
   (a-graph
    (a-vertices '(a b c d))
    (a-edges
     (list (an-edge 'a 'b)
           (an-edge 'c 'd)
-          (an-edge 'c 'b)
-          (an-edge 'a 'c))))) 
+          (an-edge 'b 'c)
+          (an-edge 'a 'd)
+          (an-edge 'c 'a)))))
 
 (define g2
   (a-graph
@@ -227,27 +155,34 @@
 
 
 
+(define (my-map proc lst)
+  (if (null? lst)
+      '()  ; Caso base: lista vacía
+      (cons (proc (car lst)) (my-map proc (cdr lst)))))  ; Aplicar `proc` al primer elemento y recursivamente al resto
 
 
-;; Mostrar el grafo
-;; Ejemplos para probar la función handle-graph
-(display "Handling graph g1:")
+
+;; Función para encontrar los vecinos salientes de un nodo en un grafo dirigido
+;; Función para encontrar los vecinos salientes de un nodo en un grafo dirigido
+(define vecinos-salientes 
+  (lambda (graph nodo)
+    (letrec ((edges (graph-exp-edges graph)) ;; Obtener el objeto edges
+             (edgelist (edges-exp-edgelist edges)) ;; Obtener la lista de aristas
+             ;; Filtrar las aristas cuyo nodo de inicio es el nodo dado
+             (filtered-edges (filter (lambda (edge)
+                                       (eq? (edge-exp-from edge) nodo))
+                                   edgelist))) ;; Lista de aristas que comienzan con el nodo dado
+      ;; Extraer los nodos de destino de las aristas filtradas
+      (my-map (lambda (edge) (edge-exp-to edge)) filtered-edges)))) ;; Lista de nodos destino
+
+
+
 (newline)
-(handle-graph g1)
+(display "Salidas 2.3-B   vecinos-salientes  define-datatype")
 (newline)
 
-(display "Handling graph g2:")
 (newline)
-(handle-graph g2)
+(display(vecinos-salientes g1 'a))
 (newline)
+(display g1 )
 
-(display "Handling graph g5:")
-(newline)
-(handle-graph g5)
-(newline)
-(display (unparse-exp g1))
-(newline)
-(display (unparse-exp g2))
-(newline)
-(display (unparse-exp g5))
-(newline)

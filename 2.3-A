@@ -1,5 +1,6 @@
 #lang eopl
 
+
 ;; Definición de tipos de datos (datatypes)
 (define-datatype graph-exp graph?
   (a-graph
@@ -54,7 +55,7 @@
       (a-graph (vertices edges) edges))))
 
 ;; Función para desanalizar (unparse) una estructura graph-exp a su representación textual
-(define unparse-exp
+(define UNPARSEBNF
   (lambda (exp)
     (cases graph-exp exp
       (a-graph (vertices edges)
@@ -117,7 +118,73 @@
           (an-edge 'c 'd)
           (an-edge 'c 'b)
           (an-edge 'a 'c)))))
-(display g1)
+
+(define g2
+  (a-graph
+   (a-vertices '(x y z))
+   (a-edges (list (an-edge 'x 'y)
+                  (an-edge 'y 'z)
+                  (an-edge 'z 'x)))))
+
+(define g5
+  (a-graph
+   (a-vertices '(m n o p))
+   (a-edges (list (an-edge 'm 'n)
+                  (an-edge 'n 'm)
+                  (an-edge 'n 'o)
+                  (an-edge 'o 'n)
+                  (an-edge 'o 'p)
+                  (an-edge 'p 'o)
+                  (an-edge 'p 'm)
+                  (an-edge 'm 'p)
+                  (an-edge 'm 'o)
+                  (an-edge 'o 'm)
+                  (an-edge 'n 'p)
+                  (an-edge 'p 'n)))))
+
+;;;;;;;;;;;;;;;;;2.3-A
+;; Definir la función add-edge que añade una arista al grafo
+;; Función add-edge que añade una arista al grafo
+
+(define add-edge
+  (lambda (graph new-edge)
+    ;; Extraer los vértices y las aristas del grafo
+    (letrec ((vertices (graph-exp-vertices graph))
+           (edges (graph-exp-edges graph))
+           (edgelist (edges-exp-edgelist edges))
+           ;; Verificar si la nueva arista ya existe en la lista de aristas
+           (edge-exists? (member new-edge edgelist)))
+      ;; Si la arista no existe, añadirla a la lista de aristas
+      (if edge-exists?
+          graph ;; Si ya existe, devolver el grafo original sin cambios
+          (let ((new-edgelist (cons new-edge edgelist)))
+            ;; Crear un nuevo grafo con la arista añadida
+            (a-graph (graph-exp-vertices graph)
+                     (a-edges new-edgelist)))))))
+
+
+
+
+(define new-edge (an-edge 'a 'd))
+
+;; Añadir la nueva arista al grafo
+(define updated-g1a (add-edge g1 new-edge))
+(define updated-g2a (add-edge g2 new-edge))
+
+
 (newline)
-(display (unparse-exp g1))
+(display "Salidas 2.3-A    add-edge define-datatype")
 (newline)
+
+(newline)
+(display (UNPARSEBNF g1))
+(newline)
+
+(newline)
+(display (unparse-edge  new-edge) )
+(newline)
+
+(newline)
+(display (UNPARSEBNF updated-g1a))
+(newline)
+

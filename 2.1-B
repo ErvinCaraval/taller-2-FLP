@@ -1,0 +1,104 @@
+#lang eopl
+
+;; Definición de tipos de datos (datatypes)
+(define-datatype graph-exp graph?
+  (graph
+   (vertices vertices-exp?)  ; lista de vértices
+   (edges edges-exp?)))      ; lista de aristas
+
+(define-datatype vertices-exp vertices-exp?
+  (vertices
+   (nodelist (list-of symbol?))))  ; lista de símbolos (vértices)
+
+(define-datatype edges-exp edges-exp?
+  (edges
+   (edgelist (list-of edge-exp?))))  ; lista de aristas
+
+(define-datatype edge-exp edge-exp?
+  (an-edge
+   (from symbol?)          ; vértice origen
+   (to symbol?)))          ; vértice destino
+
+;; Selectores para vertices-exp utilizando lambda
+(define vertices-exp-nodelist
+  (lambda (v-exp)
+    (cases vertices-exp v-exp
+      (vertices (nodelist) nodelist))))
+
+;; Selectores para edges-exp utilizando lambda
+(define edges-exp-edgelist
+  (lambda (e-exp)
+    (cases edges-exp e-exp
+      (edges (edgelist) edgelist))))
+
+;; Selectores para edge-exp utilizando lambda
+(define edge-exp-from
+  (lambda (edge)
+    (cases edge-exp edge
+      (an-edge (from to) from))))
+
+(define edge-exp-to
+  (lambda (edge)
+    (cases edge-exp edge
+      (an-edge (from to) to))))
+
+;; Selectores para graph-exp utilizando lambda
+(define graph-exp-vertices
+  (lambda (g-exp)
+    (cases graph-exp g-exp
+      (graph (vertices edges) vertices))))
+
+(define graph-exp-edges
+  (lambda (g-exp)
+    (cases graph-exp g-exp
+      (graph (vertices edges) edges))))
+
+
+
+
+;; Ejemplos
+
+(define g1
+  (graph
+   (vertices '(a b c d))
+   (edges
+    (list (an-edge 'a 'b)
+          (an-edge 'c 'd)
+          (an-edge 'c 'b)
+          (an-edge 'a 'c))))) 
+
+(define g2
+  (graph
+   (vertices '(x y z))
+   (edges (list (an-edge 'x 'y)
+                  (an-edge 'y 'z)
+                  (an-edge 'z 'x)))))
+
+(define g5
+  (graph
+   (vertices '(m n o p))
+   (edges (list (an-edge 'm 'n)
+                  (an-edge 'n 'm)
+                  (an-edge 'n 'o)
+                  (an-edge 'o 'n)
+                  (an-edge 'o 'p)
+                  (an-edge 'p 'o)
+                  (an-edge 'p 'm)
+                  (an-edge 'm 'p)
+                  (an-edge 'm 'o)
+                  (an-edge 'o 'm)
+                  (an-edge 'n 'p)
+                  (an-edge 'p 'n)))))
+
+
+
+
+
+;; Mostrar el grafo
+(newline)
+(display g1)
+(newline)
+(display g2)
+(newline)
+(display g5)
+(newline)

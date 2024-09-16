@@ -1,5 +1,6 @@
 #lang eopl
 
+
 ;; Definición de tipos de datos (datatypes)
 (define-datatype graph-exp graph?
   (a-graph
@@ -54,7 +55,7 @@
       (a-graph (vertices edges) edges))))
 
 ;; Función para desanalizar (unparse) una estructura graph-exp a su representación textual
-(define UNPARCEDNF
+(define UNPARSEBNF
   (lambda (exp)
     (cases graph-exp exp
       (a-graph (vertices edges)
@@ -97,6 +98,17 @@
       (an-edge (from to)
                (list from to)))))
 
+(define filter
+  (lambda (pred lst)
+    (letrec ((loop
+              (lambda (lst acc)
+                (if (null? lst)
+                    (reverse acc) ;; Revertir el acumulador para mantener el orden original
+                    (loop (cdr lst)
+                          (if (pred (car lst))
+                              (cons (car lst) acc)
+                              acc))))))
+      (loop lst '()))))
 
 
 ;; Definición de `reverse` usando `letrec`
@@ -109,50 +121,44 @@
                     (loop (cdr lst) (cons (car lst) acc))))))
       (loop lst '()))))
 
-(define g1
+(define (my-map proc lst)
+  (if (null? lst)
+      '()  ; Caso base: lista vacía
+      (cons (proc (car lst)) (my-map proc (cdr lst)))))  ; 
+
+(define ga
   (a-graph
    (a-vertices '(a b c d))
    (a-edges
     (list (an-edge 'a 'b)
           (an-edge 'c 'd)
-          (an-edge 'c 'b)
-          (an-edge 'a 'c)))))
-
-(define g2
-  (a-graph
-   (a-vertices '(x y z))
-   (a-edges (list (an-edge 'x 'y)
-                  (an-edge 'y 'z)
-                  (an-edge 'z 'x)))))
-
-(define g5
-  (a-graph
-   (a-vertices '(m n o p))
-   (a-edges (list (an-edge 'm 'n)
-                  (an-edge 'n 'm)
-                  (an-edge 'n 'o)
-                  (an-edge 'o 'n)
-                  (an-edge 'o 'p)
-                  (an-edge 'p 'o)
-                  (an-edge 'p 'm)
-                  (an-edge 'm 'p)
-                  (an-edge 'm 'o)
-                  (an-edge 'o 'm)
-                  (an-edge 'n 'p)
-                  (an-edge 'p 'n)))))
-
-(display g1)
-(newline)
-(display (UNPARCEDNF g1))
-(newline)
-
-(display g2)
-(newline)
-(display (UNPARCEDNF g2))
-(newline)
+          (an-edge 'b 'c)
+          (an-edge 'a 'd)
+          (an-edge 'c 'a)))))
 
 
-(display g5)
+;;;;;;;;;;;;;;;;;2.3-C
+
+(define vecinos-entrantes
+  (lambda (graph nodo)
+    (letrec ((edges (graph-exp-edges graph)) ;; Obtener el objeto edges
+             (edgelist (edges-exp-edgelist edges)) ;; Obtener la lista de aristas
+             ;; Filtrar las aristas cuyo nodo de destino es el nodo dado
+             (filtered-edges (filter (lambda (edge)
+                                       (eq? (edge-exp-to edge) nodo))
+                                   edgelist))) ;; Lista de aristas que terminan en el nodo dado
+      ;; Extraer los nodos de origen de las aristas filtradas
+      (my-map (lambda (edge) (edge-exp-from edge)) filtered-edges))))
+
+
+
+
+;; Verificación
 (newline)
-(display (UNPARCEDNF g5))
+(display "Salidas 2.3-C   vecinos-entrantes  define-datatype")
 (newline)
+
+(newline)
+(display (vecinos-entrantes ga 'd)) 
+(newline)
+

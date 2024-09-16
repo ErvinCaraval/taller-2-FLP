@@ -46,7 +46,7 @@
         result)))
 
 ;; Función para representar la sintaxis abstracta del grafo en el formato deseado
-(define PARCEDNF
+(define PARSEBNF
     (lambda(graph)
   (letrec ((vertices (graph->vertices graph))
          (edges (graph->edges graph))
@@ -98,11 +98,11 @@
 
 
 ;; Mostrar la representación abstracta del grafo g1
-(display (PARCEDNF g1))
+(display (PARSEBNF g1))
 (newline)
-
-(display (PARCEDNF g2))
 (newline)
-
-(display (PARCEDNF g5))
+(display (PARSEBNF g2))
+(newline)
+(newline)
+(display (PARSEBNF g5))
 (newline)

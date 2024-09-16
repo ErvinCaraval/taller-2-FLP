@@ -1,0 +1,127 @@
+#lang eopl
+
+;; Constructores
+
+(define (make-graph vertices edges)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'vertices) vertices]
+      [(eq? signal 'edges) edges]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+(define (make-vertices node-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'nodelist) node-list]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+(define (make-edges edge-list)
+  (lambda (signal)
+    (cond
+      [(eq? signal 'edgelist) edge-list]
+      [else 'unknown-signal]))) ;; Manejo de señales desconocidas
+
+;; Predicados
+
+(define graph? 
+  (lambda(obj)
+  (letrec ((check-vertices (obj 'vertices))
+        (check-edges (obj 'edges)))
+    (and (procedure? obj)
+         (not (eq? check-vertices 'unknown-signal))
+         (not (eq? check-edges 'unknown-signal))))))
+
+(define vertices? 
+  (lambda (obj)
+  (letrec ((check-nodelist (obj 'nodelist)))
+    (and (procedure? obj)
+         (not (eq? check-nodelist 'unknown-signal))))))
+
+(define (edges?)
+  (lambda (obj)
+  (letrec ((check-edgelist (obj 'edgelist)))
+    (and (procedure? obj)
+         (not (eq? check-edgelist 'unknown-signal))))))
+
+;; Extractores
+
+(define graph->vertices
+  (lambda (graph)
+  (graph 'vertices)))
+
+(define graph->edges 
+  (lambda(graph)
+  (graph 'edges)))
+
+(define vertices->nodelist
+  (lambda(vertices)
+  (vertices 'nodelist)))
+
+(define edges->edgelist
+  (lambda (edges)
+  (edges 'edgelist)))
+
+(define handle-graph
+  (lambda (graph)
+    (cond
+      ((graph? graph)
+       ;; Obtenemos los vértices y aristas del grafo
+       (letrec ((vertices (graph->vertices graph))
+                (edges (graph->edges graph))
+                (vertex-list (vertices->nodelist vertices))
+                (edge-list (edges->edgelist edges)))
+         
+         ;; Imprimir la representación del grafo en formato de lista
+         (display "(graph ")
+         (display (list 'vertices vertex-list))
+         (display " ")
+         (display (list 'edges edge-list))
+         (display ")")
+         (newline)))
+      
+      ;; Si no es un grafo válido
+      (else
+       (display "Not a valid graph.")
+       (newline)))))
+
+
+
+
+;; Crear grafos
+(define g1
+  (make-graph
+   (make-vertices '(a b c d))
+   (make-edges '((a b) (c d) (c b) (a c)))))
+
+(define g2
+  (make-graph
+   (make-vertices '(x y z))
+   (make-edges '((x y) (y z) (z x)))))
+
+(define g3
+  (make-graph
+   (make-vertices '(p q r s))
+   (make-edges '((p q) (q r) (r s) (s p)))))
+
+(define g5
+  (make-graph
+   (make-vertices '(m n o p))
+   (make-edges '((m n) (n m)
+                 (n o) (o n)
+                 (o p) (p o)
+                 (p m) (m p)
+                 (m o) (o m)
+                 (n p) (p n)))))
+
+
+;; Usar la función para manejar los grafos
+(handle-graph g1)
+(newline)
+(handle-graph g2)
+(newline)
+(handle-graph g3)
+(newline)
+(handle-graph g5)
+(newline)
+
+
