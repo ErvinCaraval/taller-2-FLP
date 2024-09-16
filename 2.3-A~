@@ -145,47 +145,19 @@
 ;;;;;;;;;;;;;;;;;2.3-A
 ;; Definir la función add-edge que añade una arista al grafo
 ;; Función add-edge que añade una arista al grafo
-(define members
-  (lambda (element lst)
-    ;; Función auxiliar recursiva
-    (letrec ((member-helper
-              (lambda (lst)
-                (cond
-                  ;; Caso base: si la lista es vacía, devolver #f
-                  [(null? lst) #f]
-                  ;; Caso base: si el primer elemento de la lista es igual al elemento buscado, devolver la sublista
-                  [(equal? element (car lst)) lst]
-                  ;; Caso recursivo: continuar con el resto de la lista
-                  [else (member-helper (cdr lst))]))))
-      ;; Llamar a la función auxiliar con la lista completa
-      (member-helper lst))))
-
-(define appends
-  (lambda (lst1 lst2)
-    ;; Función auxiliar recursiva
-    (letrec ((append-helper
-              (lambda (lst1 lst2)
-                (cond
-                  ;; Caso base: si la primera lista está vacía, devolver la segunda lista
-                  [(null? lst1) lst2]
-                  ;; Caso recursivo: agregar el primer elemento de lst1 a la lista resultante
-                  [else (cons (car lst1) (append-helper (cdr lst1) lst2))]))))
-      ;; Llamar a la función auxiliar con las dos listas
-      (append-helper lst1 lst2))))
-
 
 (define add-edge
   (lambda (graph new-edge)
     ;; Extraer los vértices y las aristas del grafo
     (letrec ((vertices (graph-exp-vertices graph))
-             (edges (graph-exp-edges graph))
-             (edgelist (edges-exp-edgelist edges))
-             ;; Verificar si la nueva arista ya existe en la lista de aristas
-             (edge-exists? (members new-edge edgelist)))
-      ;; Si la arista no existe, añadirla al final de la lista de aristas
+           (edges (graph-exp-edges graph))
+           (edgelist (edges-exp-edgelist edges))
+           ;; Verificar si la nueva arista ya existe en la lista de aristas
+           (edge-exists? (member new-edge edgelist)))
+      ;; Si la arista no existe, añadirla a la lista de aristas
       (if edge-exists?
           graph ;; Si ya existe, devolver el grafo original sin cambios
-          (let ((new-edgelist (appends edgelist (list new-edge))))
+          (let ((new-edgelist (cons new-edge edgelist)))
             ;; Crear un nuevo grafo con la arista añadida
             (a-graph (graph-exp-vertices graph)
                      (a-edges new-edgelist)))))))
@@ -196,12 +168,23 @@
 (define new-edge (an-edge 'a 'd))
 
 ;; Añadir la nueva arista al grafo
+(define updated-g1a (add-edge g1 new-edge))
+(define updated-g2a (add-edge g2 new-edge))
+
+
 (newline)
 (display "Salidas 2.3-A    add-edge define-datatype")
 (newline)
 
+(newline)
+(display (UNPARSEBNF g1))
+(newline)
 
 (newline)
-(display(add-edge g1 new-edge))
+(display (unparse-edge  new-edge) )
+(newline)
+
+(newline)
+(display (UNPARSEBNF updated-g1a))
 (newline)
 
