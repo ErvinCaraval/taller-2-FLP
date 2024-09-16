@@ -53,49 +53,6 @@
     (cases graph-exp g-exp
       (a-graph (vertices edges) edges))))
 
-;; Función para desanalizar (unparse) una estructura graph-exp a su representación textual
-(define UNPARSEBNF
-  (lambda (exp)
-    (cases graph-exp exp
-      (a-graph (vertices edges)
-               (list 'graph
-                     (unparse-vertices vertices)
-                     (unparse-edges edges))))))
-
-;; Función para desanalizar vertices-exp
-(define unparse-vertices
-  (lambda (v-exp)
-    (cases vertices-exp v-exp
-      (a-vertices (nodelist)
-                  (list 'vertices (unparse-nodelist nodelist))))))
-
-;; Función auxiliar para desanalizar la lista de nodos
-(define unparse-nodelist
-  (lambda (lst)
-    (cond
-      [(null? lst) '()]
-      [else (cons (car lst) (unparse-nodelist (cdr lst)))])))
-
-;; Función para desanalizar edges-exp
-(define unparse-edges
-  (lambda (e-exp)
-    (cases edges-exp e-exp
-      (a-edges (edgelist)
-               (list 'edges (unparse-edgelist edgelist))))))
-
-;; Función auxiliar para desanalizar la lista de aristas
-(define unparse-edgelist
-  (lambda (lst)
-    (cond
-      [(null? lst) '()]
-      [else (cons (unparse-edge (car lst)) (unparse-edgelist (cdr lst)))])))
-
-;; Función para desanalizar edge-exp
-(define unparse-edge
-  (lambda (edge)
-    (cases edge-exp edge
-      (an-edge (from to)
-               (list from to)))))
 
 (define filter
   (lambda (pred lst)
